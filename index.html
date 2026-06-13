@@ -152,10 +152,12 @@ tr:hover td{background:#FAFCFF}
     <h1>Comissão de Prontuários</h1>
     <p>Auditoria documental hospitalar — Formulário de coleta</p>
   </div>
-  <span class="version-badge">v6 · 36+9 itens</span>
+  <span class="version-badge" style="display:none">v6 · 36+9 itens</span>
 </div>
 <div class="tabs">
   <button class="tab active" onclick="show('coleta')">📝 Coleta</button>
+  <button class="tab" onclick="window.open('dashboard.html','_blank')">📊 Análise</button>
+  <button class="tab" onclick="window.open('sobre.html','_blank')">🏥 Sobre a Comissão</button>
 </div>
 </header>
 
@@ -185,8 +187,7 @@ tr:hover td{background:#FAFCFF}
   <!-- ITENS GERAIS -->
   <div class="panel">
     <div class="panel-head">
-      <div><h2>Itens auditados — documentação geral</h2><p class="sub">27 itens originais + 9 novos por benchmark JCI/QMENTUM/ONA/CFM.</p></div>
-      <div style="display:flex;gap:8px"><span class="chip chip-blue">27 originais</span><span class="chip chip-purple">9 benchmark</span></div>
+      <div><h2>Itens auditados — documentação geral</h2><p class="sub">36 itens baseados em benchmarks JCI/QMENTUM/ONA/CFM.</p></div>
     </div>
     <div id="form" class="audit-grid"></div>
   </div>
@@ -205,8 +206,6 @@ tr:hover td{background:#FAFCFF}
     <div class="actions">
       <button class="primary" onclick="save()">💾 Salvar auditoria</button>
       <button class="secondary" onclick="clearForm()">🗑 Limpar formulário</button>
-      <button class="export" onclick="exportCSV()">⬇ Exportar CSV</button>
-      <button class="danger" onclick="wipe()">⚠ Excluir base local</button>
     </div>
   </div>
 
