@@ -793,7 +793,40 @@ function exportCSV(){
 }
 
 /* ═══════════════════════════════════════════════ INIT */
-dash();
+(function(){
+  const SENHA='auditor123';
+  const SESSION_KEY='hps_dash_auth';
+  if(sessionStorage.getItem(SESSION_KEY)==='ok'){dash();return;}
+  document.body.innerHTML=`
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(140deg,#071729 0%,#0d2845 40%,#133264 100%)">
+      <div style="background:white;border-radius:24px;padding:40px 48px;max-width:380px;width:90%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.4)">
+        <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#1F6FEB,#16A3B8);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 20px">📋</div>
+        <h2 style="font-size:20px;font-weight:900;color:#102033;margin-bottom:6px">Comissão de Prontuários</h2>
+        <p style="font-size:13px;color:#667085;margin-bottom:28px">Painel executivo — acesso restrito</p>
+        <input id="senhaInput" type="password" placeholder="Digite a senha" autofocus
+          style="width:100%;border:1.5px solid #D0D8E8;border-radius:12px;padding:12px 14px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;color:#102033;margin-bottom:12px"
+          onkeydown="if(event.key==='Enter')verificarSenha()">
+        <div id="senhaErro" style="color:#C7362F;font-size:12.5px;min-height:18px;margin-bottom:10px"></div>
+        <button onclick="verificarSenha()"
+          style="width:100%;background:linear-gradient(135deg,#1F6FEB,#1455C0);color:white;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif">
+          Entrar
+        </button>
+      </div>
+    </div>`;
+  window.verificarSenha=function(){
+    const val=document.getElementById('senhaInput').value;
+    if(val===SENHA){
+      sessionStorage.setItem(SESSION_KEY,'ok');
+      location.reload();
+    }else{
+      const el=document.getElementById('senhaErro');
+      el.textContent='Senha incorreta. Tente novamente.';
+      document.getElementById('senhaInput').value='';
+      document.getElementById('senhaInput').focus();
+      setTimeout(()=>{el.textContent=''},3000);
+    }
+  };
+})();
 </script>
 </body>
 </html>
