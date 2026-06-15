@@ -199,11 +199,13 @@ tr:hover td{background:#FAFCFF}
     </div>
     <div class="section-label" style="margin-top:14px">Contexto do prontuário</div>
     <div class="meta meta-3">
-      <div class="field"><label>Nome do auditor</label><input id="auditor" type="text" placeholder="Nome completo"></div>
+      <div class="field"><label>Nome do auditor</label><input id="auditor" type="text" placeholder="Digite ou selecione" list="auditorList" autocomplete="off"></div>
       <div class="field"><label>Dias de internação</label><input id="diasIntern" type="number" min="0" placeholder="Ex.: 5"></div>
       <div class="field"><label>Desfecho / Alta</label><select id="desfecho"><option value="">Selecione</option><option>Alta hospitalar</option><option>Transferência interna</option><option>Transferência externa</option><option>Óbito</option><option>Em internação (auditoria parcial)</option></select></div>
     </div>
   </div>
+
+  <datalist id="auditorList"></datalist>
 
   <!-- ITENS GERAIS -->
   <div class="panel">
@@ -243,6 +245,7 @@ const KEY='hps_comissao_pront_v6';
 ═══════════════════════════════════════════════ */
 const SHEETS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbz8W3BhyUU6BxxedFTDTRV3H3MPegngsdW0elG0D4_C73p8WgIgNQLsKB2dTYuyBkOOYA/exec';
 const SETORES=["Pronto Atendimento Adulto","Pronto Atendimento Infantil","Pronto Atendimento Obstétrico","Pediatria Internação","Cirurgia Pediátrica","Cirurgia Adulto","UTI Cardiológica","UTI Adulto","UTI Neonatal","UTI Pediátrica","Clínica Médica","Clínica Cirúrgica","Maternidade"];
+const AUDITORES=["Rafael de Mello Leão","Gabriel Cruvinel Macor","Raiene Camargo Mlaker Gonçalves","Ana Beatriz Souza Gonçalves","Larissa Peixoto Lopes","Iara Cristina Bueno","Erli Teresinha Marques","Amanda Helena Miguel","Orlando De Jesus Junior","Ariovaldo Silva Junior","Telma Batista dos Santos Raze","Fernanda Rampazzo Sena Pavini","Rodrigo Facundes Silva","Sueh Pereira Cordeiro","Vanessa Pereira Tavares Silva"];
 
 const DOMAIN_MAP={
   "Identificação":"#1F6FEB","Plano terapêutico":"#0D9488","Comunicação":"#6B46C1",
@@ -363,6 +366,7 @@ function cls(v){return v==='sim'?'sim':v==='nao'?'nao':'na'}
 
 /* ═══════════════════════════════════════════════ FORM */
 function fillSectors(){$('sector').innerHTML='<option value="">Selecione</option>'+SETORES.map(s=>`<option>${s}</option>`).join('')}
+function fillAuditores(){$('auditorList').innerHTML=AUDITORES.map(a=>`<option value="${a}"></option>`).join('')}
 
 function renderChoices(key, opts){
   return `<div class="choices">${opts.map(o=>{
@@ -553,7 +557,7 @@ function updateSyncStatus(){
     el.innerHTML='✅ <b style="color:var(--green)">Conectado ao Google Sheets.</b> Cada auditoria salva é enviada automaticamente ao banco de dados compartilhado.';
   }
 }
-load();fillSectors();renderForm();renderMultiForm();updateSyncStatus();
+load();fillSectors();fillAuditores();renderForm();renderMultiForm();updateSyncStatus();
 </script>
 </body>
 </html>
