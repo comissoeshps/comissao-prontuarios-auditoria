@@ -1953,13 +1953,20 @@ function show(id,btn){
 }
 
 function norm(v){
-  if(!v && v!==0) return '';
-  const s=String(v).trim().toLowerCase();
-  if(s==='sim') return 'sim';
-  if(s==='não'||s==='nao') return 'nao';
-  if(s==='não se aplica'||s==='n/a'||s==='na') return 'na';
-  if(s==='—'||s==='-'||s==='') return '';
-  return s;
+  if(v===null||v===undefined) return '';
+  const s=String(v).trim();
+  const sl=s.toLowerCase();
+  // Valores positivos
+  if(sl==='sim') return 'sim';
+  // Valores negativos
+  if(sl==='não'||sl==='nao'||sl==='nÃ£o') return 'nao';
+  // Não se aplica
+  if(sl==='não se aplica'||sl==='n/a'||sl==='na'||sl==='n.a.'||sl==='n.a') return 'na';
+  // Vazio / sem resposta — qualquer variante de traço ou vazio
+  if(s===''||s==='-'||s==='—'||s==='—'||s==='–'||s==='–') return '';
+  // Qualquer string que seja só espaços ou traços
+  if(/^[\s\-–—]+$/.test(s)) return '';
+  return sl;
 }
 
 function label(v){return v==='sim'?'Sim':v==='nao'?'Não':v==='na'?'N/A':''}
@@ -2122,15 +2129,17 @@ function save(){
 /* ═══════════════════════════════════════════════ ENVIO PARA GOOGLE SHEETS */
 function rowToRecord(row){
   const answers={};
+  const _valid=['sim','nao','na'];
   ITEMS.forEach(i=>{
     const v=row['item_'+i.num];
     const n=norm(v);
-    if(n) answers[i.num]=n;  // só registra se norm retornou valor não-vazio
+    // Só registra respostas válidas (sim/nao/na), ignora qualquer outro valor
+    if(_valid.includes(n)) answers[i.num]=n;
   });
   allMultiKeys().forEach(k=>{
     const v=row[k];
     const n=norm(v);
-    if(n) answers[k]=n;
+    if(_valid.includes(n)) answers[k]=n;
   });
   return{
     id:row.id||Date.now(),
@@ -2194,6 +2203,21 @@ async function checkAttendance(){
     if(json.status!=='ok'||!Array.isArray(json.rows)){box.style.display='none';renderForm();return;}
 
     const matches=json.rows.filter(r=>String(r.numero_atendimento||'').trim()===att);
+    if(matches.length){
+      // Debug: mostrar valores brutos dos primeiros 5 itens
+      const debugRow=matches[matches.length-1];
+      const debugVals=[];
+      for(let _i=1;_i<=5;_i++){
+        const _k='item_'+_i;
+        debugVals.push(_k+'='+JSON.stringify(debugRow[_k]));
+      }
+      console.debug('[checkAttendance] Valores brutos da planilha:', debugVals.join(', '));
+      const debugRec=rowToRecord(debugRow);
+      console.debug('[checkAttendance] Answers após rowToRecord:', JSON.stringify(debugRec.answers));
+      const debugAnswered=ITEMS.filter(i=>debugRec.answers[i.num]).map(i=>i.num);
+      const debugMissing=ITEMS.filter(i=>!debugRec.answers[i.num]).map(i=>i.num);
+      console.debug('[checkAttendance] Respondidos:', debugAnswered, '| Faltando:', debugMissing);
+    }
     if(!matches.length){
       box.innerHTML=`<div class="alert-box alert-ok"><span class="ic">✅</span><div>Nenhuma auditoria anterior encontrada para este atendimento. Pode prosseguir normalmente.</div></div>`;
       renderForm();
@@ -2203,8 +2227,11 @@ async function checkAttendance(){
     // Usa o registro mais recente para este atendimento (caso haja mais de um, por algum motivo)
     const row=matches[matches.length-1];
     const rec=rowToRecord(row);
-    const answeredNums=ITEMS.filter(i=>rec.answers[i.num]).map(i=>i.num);
-    const missingNums=ITEMS.filter(i=>!rec.answers[i.num]).map(i=>i.num);
+    // Considera respondido apenas se tem valor válido: 'sim', 'nao' ou 'na'
+    const validAnswers=['sim','nao','na'];
+    const answeredNums=ITEMS.filter(i=>validAnswers.includes(rec.answers[i.num])).map(i=>i.num);
+    const missingNums=ITEMS.filter(i=>!validAnswers.includes(rec.answers[i.num])).map(i=>i.num);
+    console.debug('[checkAttendance] Total ITEMS:',ITEMS.length,'| Respondidos:',answeredNums.length,'| Faltando:',missingNums.length,'| Missing:',missingNums);
 
     if(!missingNums.length){
       // Auditoria completa — bloquear
