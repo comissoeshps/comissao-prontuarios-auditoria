@@ -861,34 +861,57 @@ function showForgotScreen(){
 }
 
 /* tryLogin — com detecção de primeiro acesso */
-function tryLogin(){
+async function tryLogin(){
   const user=$('loginUser').value.trim().toLowerCase();
   const pass=$('loginPass').value;
   const err=$('loginErr');
+  const btn=document.querySelector('#loginScreen .login-btn');
   err.textContent='';
 
   if(!USUARIOS[user]){ err.textContent='Usuário não encontrado.'; return; }
 
-  // Verificar se já tem senha personalizada no Firebase/localStorage
-  const storedHash=localStorage.getItem('hps_pass_'+user);
+  if(btn){ btn.textContent='Verificando…'; btn.disabled=true; }
 
-  if(!storedHash){
-    // Primeiro acesso: ainda usa senha global
-    if(pass!==SENHA_GLOBAL){ err.textContent='Senha incorreta.'; return; }
-    // Redirecionar para tela de primeiro acesso
+  try{
+    // Sempre consultar o Firebase como fonte de verdade
+    initFirebase();
+    let firebaseHash=null;
+
+    if(fbDB){
+      try{
+        const snap=await fbDB.ref('auth/'+user+'/passHash').once('value');
+        if(snap.exists()) firebaseHash=snap.val();
+      }catch(e){ console.warn('Firebase lookup failed:', e.message); }
+    }
+
+    // Se tem hash no Firebase → verificar contra ele (ignora localStorage)
+    if(firebaseHash){
+      if(hashPass(pass)!==firebaseHash){
+        err.textContent='Senha incorreta.';
+        return;
+      }
+      // Atualizar localStorage com dado do Firebase (sincronizar)
+      localStorage.setItem('hps_pass_'+user, firebaseHash);
+      completeLogin(user);
+      return;
+    }
+
+    // Sem hash no Firebase → primeiro acesso
+    // Aceitar senha global para confirmar identidade
+    if(pass!==SENHA_GLOBAL){
+      err.textContent='Senha incorreta.';
+      return;
+    }
+    // Ir para tela de primeiro acesso
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('firstAccessScreen').style.display='block';
     document.getElementById('loginPanelTitle').textContent='Primeiro acesso';
     document.getElementById('loginPanelSub').textContent='Cadastre seu e-mail e defina uma senha pessoal';
-    // Guardar o login temporariamente
     _resetTargetLogin=user;
-    return;
+
+  }finally{
+    if(btn){ btn.textContent='Entrar'; btn.disabled=false; }
   }
-
-  // Verificar senha personalizada (hash simples)
-  if(hashPass(pass)!==storedHash){ err.textContent='Senha incorreta.'; return; }
-
-  completeLogin(user);
 }
 
 /* Completar login após autenticação */
