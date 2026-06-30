@@ -2117,8 +2117,27 @@ function setVal(key,val){
 function clearForm(){
   current={};
   existingRecordId=null; lockedItemNums=new Set(); blockedSubmit=false;
-  ['auditDate','attendance','auditor','diasIntern'].forEach(id=>{const el=$(id);if(el)el.value=''});
+  // Limpar campos — auditor NÃO é resetado (fica sempre o do login)
+  ['attendance','diasIntern'].forEach(id=>{const el=$(id);if(el)el.value=''});
+  // Preencher data de hoje automaticamente
+  const dateEl=$('auditDate');
+  if(dateEl){
+    const today=new Date();
+    const yyyy=today.getFullYear();
+    const mm=String(today.getMonth()+1).padStart(2,'0');
+    const dd=String(today.getDate()).padStart(2,'0');
+    dateEl.value=yyyy+'-'+mm+'-'+dd;
+  }
   ['sector','tipoInt','desfecho'].forEach(id=>{const el=$(id);if(el)el.value=''});
+  // Restaurar nome do auditor logado
+  const auditorEl=$('auditor');
+  if(auditorEl && currentUser){
+    auditorEl.value=currentUser.name;
+    auditorEl.readOnly=true;
+    auditorEl.style.background='var(--soft)';
+    auditorEl.style.color='var(--muted)';
+    auditorEl.style.cursor='not-allowed';
+  }
   var box=$('attendanceStatus');if(box){box.style.display='none';box.innerHTML=''}
   if($('observacoes'))$('observacoes').value='';
   tipoProntuario='online';setTipoProntuario('online');
