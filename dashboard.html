@@ -520,7 +520,9 @@ function dashApply(){
   const scores=arr.map(score);
   const total=arr.length;
   const tSim=scores.reduce((a,b)=>a+b.sim,0),tNao=scores.reduce((a,b)=>a+b.nao,0),tNa=scores.reduce((a,b)=>a+b.na,0);
-  const avg=Math.round(scores.reduce((a,b)=>a+b.pct,0)/total);
+  // Média de conformidade: ignora prontuários onde todos itens são N/A (app=0)
+  const scoresComApp=scores.filter(s=>s.app>0);
+  const avg=scoresComApp.length ? Math.round(scoresComApp.reduce((a,b)=>a+b.pct,0)/scoresComApp.length) : 0;
   const critN=scores.filter(s=>s.nao>0).length;
   const excelentes=scores.filter(s=>s.pct>=90).length;
   const avgColor=avg>=90?'var(--green)':avg>=75?'var(--amber)':'var(--red)';
@@ -548,7 +550,7 @@ function dashApply(){
     <div class="kpi kpi-red"><small>Com 1 não conformidade</small><b>${Math.round(critN/total*100)}%</b><span>${critN} prontuários</span></div>
     <div class="kpi kpi-amber"><small>Não conformidades total</small><b>${tNao}</b><span>respostas "não"</span></div>
     <div class="kpi kpi-purple"><small>Excelentes 90%</small><b>${excelentes}</b><span>${Math.round(excelentes/total*100)}% do total</span></div>
-    <div class="kpi kpi-teal"><small>Não se aplica</small><b>${tNa}</b><span>respostas N/A</span></div>
+    <div class="kpi kpi-teal"><small>Não se aplica</small><b>${tNa}</b><span>excluídos da análise</span></div>
   </div>
   <div class="charts-grid">
     <div class="chartbox"><h3>Conformidade por setor</h3><div class="chart"><canvas id="cSector"></canvas></div></div>
