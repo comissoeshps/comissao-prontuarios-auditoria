@@ -784,15 +784,18 @@ let mediaRecorder=null,audioChunks=[],isRecording=false;
 
 /* === CONTROLE DE VERSÃO / CACHE BUSTER === */
 (function(){
-  var CURRENT_VERSION = '2.0.0';
+  var CURRENT_VERSION = '2.1.0';
   var storedVersion = localStorage.getItem('hps_app_version');
   if(storedVersion !== CURRENT_VERSION){
     localStorage.setItem('hps_app_version', CURRENT_VERSION);
-    // Limpar sessão antiga (força novo login)
     sessionStorage.removeItem('hps_user');
-    // Forçar recarregamento sem cache
+    // Limpar senhas e emails do localStorage (migrar para sessionStorage)
+    Object.keys(localStorage).forEach(function(k){
+      if(k.startsWith('hps_pass_')||k.startsWith('hps_email_')){
+        localStorage.removeItem(k);
+      }
+    });
     if(storedVersion !== null){
-      // Só recarrega se já tinha uma versão antiga (não na primeira visita)
       window.location.reload(true);
     }
   }
@@ -896,7 +899,7 @@ async function tryLogin(){
         return;
       }
       // Atualizar localStorage com dado do Firebase (sincronizar)
-      localStorage.setItem('hps_pass_'+user, firebaseHash);
+      sessionStorage.setItem('hps_pass_'+user, firebaseHash);
       completeLogin(user);
       return;
     }
@@ -979,8 +982,8 @@ async function submitFirstAccess(){
 
   try{
     // 1. Salvar localmente (sempre funciona, não depende de Firebase)
-    localStorage.setItem('hps_pass_'+login, hashPass(p1));
-    localStorage.setItem('hps_email_'+login, email);
+    sessionStorage.setItem('hps_pass_'+login, hashPass(p1));
+    sessionStorage.setItem('hps_email_'+login, email);
 
     // 2. Tentar salvar no Firebase (opcional — não bloqueia o login se falhar)
     if(fbDB){
@@ -1021,7 +1024,7 @@ async function sendResetCode(){
   if(!USUARIOS[user]){ err.textContent='Usuário não encontrado.'; return; }
 
   // Buscar e-mail do usuário
-  let email=localStorage.getItem('hps_email_'+user);
+  let email=sessionStorage.getItem('hps_email_'+user)||localStorage.getItem('hps_email_'+user);
   if(!email && fbDB){
     try{
       const snap=await fbDB.ref('auth/'+user+'/email').once('value');
@@ -1083,7 +1086,7 @@ async function submitResetPassword(){
   if(p1!==p2){ err.textContent='As senhas não coincidem.'; return; }
 
   const login=_resetTargetLogin;
-  localStorage.setItem('hps_pass_'+login, hashPass(p1));
+  sessionStorage.setItem('hps_pass_'+login, hashPass(p1));
 
   if(fbDB){
     try{
@@ -2005,9 +2008,11 @@ function renderFileList(){
 ═══════════════════════════════════════════════ */
 
 // Coleta todas as keys multiprofissionais para scoring
-function load(){try{data=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){data=[]}}
+function load(){try{data=JSON.parse(sessionStorage.getItem(KEY)||localStorage.getItem(KEY)||'[]')}catch(e){data=[]}}
+// Migrar dados antigos do localStorage para sessionStorage
+(function(){try{const old=localStorage.getItem(KEY);if(old){sessionStorage.setItem(KEY,old);localStorage.removeItem(KEY);}}catch(e){}})();
 
-function persist(){localStorage.setItem(KEY,JSON.stringify(data))}
+function persist(){try{sessionStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
 
 function show(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
