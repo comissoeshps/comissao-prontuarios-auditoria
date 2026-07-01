@@ -2145,10 +2145,10 @@ function clearForm(){
   existingRecordId=null; lockedItemNums=new Set(); blockedSubmit=false;
   // Limpar campos — auditor NÃO é resetado (fica sempre o do login)
   ['attendance','diasIntern'].forEach(id=>{const el=$(id);if(el)el.value=''});
-  // Preencher data de hoje automaticamente
+  // Preencher data de hoje em horário de Brasília
   const dateEl=$('auditDate');
   if(dateEl){
-    const today=new Date();
+    const today=new Date(new Date().toLocaleString('en-US',{timeZone:'America/Sao_Paulo'}));
     const yyyy=today.getFullYear();
     const mm=String(today.getMonth()+1).padStart(2,'0');
     const dd=String(today.getDate()).padStart(2,'0');
@@ -2167,6 +2167,13 @@ function clearForm(){
   var box=$('attendanceStatus');if(box){box.style.display='none';box.innerHTML=''}
   if($('observacoes'))$('observacoes').value='';
   tipoProntuario='online';setTipoProntuario('online');
+  // Remover bloqueio de físico caso tenha sido aplicado
+  const pfReset=document.getElementById('panel-itens-fisico');
+  if(pfReset){
+    pfReset.style.opacity='';pfReset.style.pointerEvents='';
+    const oldMsg=pfReset.querySelector('.fis-block-msg');
+    if(oldMsg) oldMsg.remove();
+  }
   currentFisico={};pendingFiles=[];if(typeof renderFisicoExtra==='function')renderFisicoExtra();if(typeof renderFileList==='function')renderFileList();
   renderForm();renderMultiForm();
 }
@@ -2322,6 +2329,24 @@ async function checkAttendance(){
       lockedItemNums=new Set(ITEMS.map(i=>i.num));
       // Carregar todas as respostas para exibição visual
       ITEMS.forEach(i=>{ if(rec.answers[i.num]) current[i.num]=rec.answers[i.num]; });
+      // Aplicar tipo de prontuário
+      const cTipo=(rec.tipoProntuario||'online').toLowerCase();
+      tipoProntuario=cTipo;
+      setTipoProntuario(cTipo);
+      // Bloquear físico se online
+      if(cTipo==='online'){
+        setTimeout(()=>{
+          const pf=document.getElementById('panel-itens-fisico');
+          if(pf&&!pf.querySelector('.fis-block-msg')){
+            pf.style.opacity='0.4';pf.style.pointerEvents='none';
+            const m2=document.createElement('div');
+            m2.className='fis-block-msg';
+            m2.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.6);border-radius:16px;font-size:13px;font-weight:700;color:var(--muted);z-index:2';
+            m2.textContent='Prontuário online — itens físicos não aplicáveis';
+            pf.style.position='relative';pf.appendChild(m2);
+          }
+        },100);
+      }
       box.innerHTML=`<div class="alert-box alert-blocked"><span class="ic">⛔</span><div>
         <b>Este prontuário já foi auditado completamente</b> — todos os ${ITEMS.length} itens respondidos${rec.auditor?', por '+rec.auditor:''}${rec.date?' em '+rec.date:''}.
         <br>As respostas registradas estão exibidas abaixo apenas para consulta. Informe outro número para iniciar uma nova auditoria.
@@ -2346,15 +2371,40 @@ async function checkAttendance(){
       <br>Os itens já registrados estão bloqueados (marcados com ✔). Complete apenas os pendentes.
     </div></div>`;
 
-    // Pré-carrega o restante dos dados de identificação se estiverem vazios
+    // Pré-carrega dados de identificação
     if(!$('auditDate').value&&rec.date)$('auditDate').value=rec.date;
     if(!$('sector').value&&rec.sector)$('sector').value=rec.sector;
     if(!$('tipoInt').value&&rec.tipoInt)$('tipoInt').value=rec.tipoInt;
     if(!$('diasIntern').value&&rec.diasIntern)$('diasIntern').value=rec.diasIntern;
     if(!$('desfecho').value&&rec.desfecho)$('desfecho').value=rec.desfecho;
 
-    // Pré-carrega as respostas já existentes no estado atual (para não perdê-las ao salvar)
-    answeredNums.forEach(n=>{current[n]=rec.answers[n]});
+    // Pré-carrega tipo de prontuário e aplica nos painéis
+    const recTipo=(rec.tipoProntuario||'online').toLowerCase();
+    tipoProntuario=recTipo;
+    setTipoProntuario(recTipo);
+
+    // Pré-carrega respostas já existentes
+    answeredNums.forEach(n=>{ current[n]=rec.answers[n]; });
+
+    // Se prontuário é ONLINE, bloquear completamente os itens físicos
+    // (não podem ser preenchidos nem agora nem na complementação)
+    if(recTipo==='online'){
+      const panelFis=document.getElementById('panel-itens-fisico');
+      if(panelFis){
+        panelFis.style.opacity='0.4';
+        panelFis.style.pointerEvents='none';
+        panelFis.style.position='relative';
+        // Adicionar aviso
+        if(!panelFis.querySelector('.fis-block-msg')){
+          const msg=document.createElement('div');
+          msg.className='fis-block-msg';
+          msg.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.6);border-radius:16px;font-size:13px;font-weight:700;color:var(--muted);z-index:2';
+          msg.textContent='Prontuário online — itens físicos não aplicáveis';
+          panelFis.style.position='relative';
+          panelFis.appendChild(msg);
+        }
+      }
+    }
 
     renderForm();
   }catch(err){
