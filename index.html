@@ -2424,6 +2424,7 @@ async function checkAttendance(){
       }
       // Carregar todas as respostas
       ITEMS.forEach(i=>{ if(rec.answers[i.num]) current[i.num]=rec.answers[i.num]; });
+      allMultiKeys().forEach(k=>{ if(rec.answers[k]) current[k]=rec.answers[k]; });
       // Aplicar tipo de prontuário
       const cTipo=(rec.tipoProntuario||'online').toLowerCase();
       tipoProntuario=cTipo;
@@ -2498,7 +2499,10 @@ async function checkAttendance(){
     setTipoProntuario(recTipo);
 
     // Pré-carrega respostas já existentes
+    // Carregar respostas dos itens online
     answeredNums.forEach(n=>{ current[n]=rec.answers[n]; });
+    // Carregar respostas da equipe multiprofissional em current
+    answeredMultiKeys.forEach(k=>{ current[k]=rec.answers[k]; });
 
     // Se prontuário é ONLINE, bloquear completamente os itens físicos
     // (não podem ser preenchidos nem agora nem na complementação)
@@ -2559,7 +2563,19 @@ function wipe(){if(confirm('Excluir TODOS os registros salvos localmente neste n
 /* ═══════════════════════════════════════════════ SCORING */
 function score(rec){
   let sim=0,nao=0,na=0,app=0;
-  ITEMS.forEach(i=>{const v=rec.answers[i.num];if(v==='sim'){sim++;app++}else if(v==='nao'){nao++;app++}else if(v==='na')na++});
+  ITEMS.forEach(i=>{
+    const v=rec.answers[i.num];
+    if(v==='sim'){sim++;app++;}
+    else if(v==='nao'){nao++;app++;}
+    else if(v==='na') na++;
+  });
+  // Itens multiprofissionais também entram na conformidade
+  allMultiKeys().forEach(k=>{
+    const v=rec.answers[k];
+    if(v==='sim'){sim++;app++;}
+    else if(v==='nao'){nao++;app++;}
+    else if(v==='na') na++;
+  });
   return{sim,nao,na,app,pct:app?Math.round(sim/app*100):0};
 }
 
