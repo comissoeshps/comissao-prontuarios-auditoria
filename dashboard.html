@@ -557,6 +557,7 @@ function dash(){
 function dashApply(){
   destroy();
   const arr=getFiltered();
+  filteredData=arr; // salvar para referência nos cliques da tabela
   const c=$('dashContent');
   if(!arr.length){c.innerHTML='<div class="empty">Nenhum registro para os filtros selecionados.</div>';return;}
   const scores=arr.map(score);
@@ -641,6 +642,7 @@ function dashApply(){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <h2>Base de prontuários auditados</h2><button class="export" onclick="exportCSV()"> Exportar CSV</button>
     </div>
+    <div id="attendanceDetail" style="display:none;margin-bottom:18px"></div>
     <div class="tablewrap"><table><thead><tr><th>Data</th><th>Atendimento</th><th>Setor</th><th>Tipo Int.</th><th>Prontuário</th><th>Auditor</th><th>Dias</th><th>Desfecho</th><th>Conf.</th></tr></thead><tbody>
     ${arr.map(r=>{
       const s=score(r);
@@ -650,7 +652,8 @@ function dashApply(){
       const tp=(r.tipoProntuario||'online').toLowerCase();
       const tpColor=tp==='fisico'?'var(--orange)':tp==='ambos'?'var(--purple)':'var(--blue)';
       const tpLabel=tp==='fisico'?'Físico':tp==='ambos'?'Ambos':'Online';
-      return`<tr>
+      const rIdx=filteredData.indexOf(r);
+      return`<tr style='cursor:pointer' onclick='showAttendanceDetail(filteredData[${rIdx}])' title='Clique para ver todos os itens auditados'>
       <td style="white-space:nowrap;font-size:12px">${dateStr}</td>
       <td><b style="font-family:'DM Mono',monospace">${r.attendance}</b></td>
       <td>${r.sector}</td>
