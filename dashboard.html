@@ -586,14 +586,32 @@ function dashApply(){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <h2>Base de prontuários auditados</h2><button class="export" onclick="exportCSV()"> Exportar CSV</button>
     </div>
-    <div class="tablewrap"><table><thead><tr><th>Data</th><th>Atendimento</th><th>Setor</th><th>Tipo</th><th>Auditor</th><th>Dias</th><th>Desfecho</th><th>Conf.</th></tr></thead><tbody>
-    ${arr.map(r=>{const s=score(r);return`<tr>
-      <td style="white-space:nowrap">${r.date}</td><td><b style="font-family:'DM Mono',monospace">${r.attendance}</b></td>
-      <td>${r.sector}</td><td style="font-size:11px;color:var(--muted)">${r.tipoInt||''}</td>
-      <td style="font-size:11px">${r.auditor||''}</td><td style="text-align:center">${r.diasIntern||''}</td>
+    <div class="tablewrap"><table><thead><tr><th>Data</th><th>Atendimento</th><th>Setor</th><th>Tipo Int.</th><th>Prontuário</th><th>Auditor</th><th>Dias</th><th>Desfecho</th><th>Conf.</th></tr></thead><tbody>
+    ${arr.map(r=>{
+      const s=score(r);
+      // Formatar data em horário de Brasília
+      let dateStr=r.date||'';
+      if(dateStr && dateStr.length>=10){
+        try{
+          const d=new Date(dateStr+'T00:00:00-03:00');
+          dateStr=d.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});
+        }catch(e){}
+      }
+      // Badge de tipo de prontuário
+      const tp=(r.tipoProntuario||'online').toLowerCase();
+      const tpColor=tp==='fisico'?'var(--orange)':tp==='ambos'?'var(--purple)':'var(--blue)';
+      const tpLabel=tp==='fisico'?'Físico':tp==='ambos'?'Ambos':'Online';
+      return`<tr>
+      <td style="white-space:nowrap">${dateStr}</td>
+      <td><b style="font-family:'DM Mono',monospace">${r.attendance}</b></td>
+      <td>${r.sector}</td>
+      <td style="font-size:11px;color:var(--muted)">${r.tipoInt||''}</td>
+      <td><span style="background:${tpColor}18;color:${tpColor};border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700">${tpLabel}</span></td>
+      <td style="font-size:11px">${r.auditor||''}</td>
+      <td style="text-align:center">${r.diasIntern||''}</td>
       <td style="font-size:11px">${r.desfecho||''}</td>
       <td><b style="color:${s.pct>=90?'var(--green)':s.pct>=75?'var(--amber)':'var(--red)'}">${s.pct}%</b></td>
-    </tr>`}).join('')}
+    </tr>`;}).join('')}
     </tbody></table></div>
   </div>`;
 
